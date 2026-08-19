@@ -59,7 +59,7 @@ CREATE TABLE Libros
 	ISBN varchar(13) primary key,
 	NomLib varchar(30) not null,
 	Genero varchar(20) not null,
-	ReseÒa varchar(200) not null,
+	Rese√±a varchar(200) not null,
 	Stock int not null,
 	CodA varchar(10) not null References Autor(CodA),
 	NomE varchar(30) not null References Editorial(NomE)
@@ -72,6 +72,9 @@ CREATE TABLE Solicitud
 	FechaS datetime not null Default GetDate(), -- automatica
 	FechaEntrega datetime not null,
 	RUT varchar(12) not null References Libreria(RUT)
+
+	CONSTRAINT CK_Solicitud_FechaEntrega
+	CHECK(FechaEntrega >= DATEADD(HOUR, 24, FechaS))
 )
 go
 
@@ -81,14 +84,17 @@ CREATE TABLE Incluye
 	ISBN varchar(13) not null References Libros(ISBN),
 	Cantidad int not null,
 
-	Primary Key(idSolicitud, ISBN)
+	Primary Key(idSolicitud, ISBN),
+
+	CONSTRAINT CK_Incluye_Cantidad
+	CHECK (Cantidad > 0)
 )
 go
 
 ------------------------- INDICES -------------------------
--- Se crean Ìndices ˙nicos sobre NomUsuE y NomUsuL porque la letra indica que los nombres de usuario deben ser ˙nicos. 
+-- Se crean √≠ndices √∫nicos sobre NomUsuE y NomUsuL porque la letra indica que los nombres de usuario deben ser √∫nicos. 
 -- No se usa UNIQUE a nivel de tabla, ya que las restricciones permitidas en tablas son PK, FK y DEFAULT. 
--- Adem·s, el Ìndice mejora las b˙squedas por usuario.
+-- Adem√°s, el √≠ndice mejora las b√∫squedas por usuario.
 
 CREATE UNIQUE INDEX Editorial_NomUsuE
 ON Editorial(NomUsuE)
@@ -130,7 +136,7 @@ go
 CREATE VIEW Catalogo
 AS
 SELECT ISBN 'IDLibro', NomLib 'Denominacion', Genero 'Tipo',
-	   ReseÒa 'Descripcion', Stock 'Disponible', 
+	   Rese√±a 'Descripcion', Stock 'Disponible', 
 	   CodA 'IDEscritor', NomE 'IDProveedor'
 FROM Libros
 go
@@ -166,7 +172,7 @@ BEGIN
 	-- validamos que el formato IDProcedencia (CodP) sea solo de 3 letras
 	if exists(select * from inserted where LEN(IDProcedencia) <> 3 OR IDProcedencia LIKE '%[^a-zA-Z]%')
 	begin
-		RAISERROR('El cÛdigo debe tener 3 letras, no se da de alta', 16,1)
+		RAISERROR('El c√≥digo debe tener 3 letras, no se da de alta', 16,1)
 		return
 	end
 
@@ -184,7 +190,7 @@ BEGIN
 		return
 	end
 
-	-- Si llego ac· todo esta OK
+	-- Si llego ac√° todo esta OK
 	insert Pais(CodP, NomP, Continente)
 	select IDProcedencia, Denominacion, Region
 	from inserted
@@ -224,7 +230,7 @@ BEGIN
 		return
 	end
 
-	-- Si llego ac· todo esta OK, se puede modificar
+	-- Si llego ac√° todo esta OK, se puede modificar
 	UPDATE Pais
 	set NomP = (select Denominacion from inserted),
 		Continente = (select Region from inserted)
@@ -258,7 +264,7 @@ BEGIN
 		return
 	end
 
-	-- Si llego ac· todo esta OK, se puede eliminar
+	-- Si llego ac√° todo esta OK, se puede eliminar
 	DELETE Pais
 	where CodP = (select IDProcedencia from deleted)
 END
@@ -327,7 +333,7 @@ BEGIN
 		return
 	end
 
-	-- Si llego ac· todo esta OK
+	-- Si llego ac√° todo esta OK
 	insert Autor(CodA,NomA,FechaNacA, FechaDefA, CodP)
 	select IDEscritor, Denominacion, Nacimiento, Fallecimiento, IDProcedencia
 	from inserted
@@ -393,7 +399,7 @@ BEGIN
 		return
 	end
 
-	-- Si llego ac· todo esta OK, se puede modificar
+	-- Si llego ac√° todo esta OK, se puede modificar
 	UPDATE Autor
 	set NomA = (select Denominacion from inserted),
 		FechaNacA = (select Nacimiento from inserted),
@@ -422,7 +428,7 @@ BEGIN
 		return
 	end
 
-	-- Si llego ac· todo esta OK, se puede eliminar
+	-- Si llego ac√° todo esta OK, se puede eliminar
 	DELETE Autor
 	where CodA = (select IDEscritor from deleted)
 END
@@ -481,18 +487,18 @@ BEGIN
 		return
 	end
 
-	-- validamos contraseÒa (PassUsuE)
+	-- validamos contrase√±a (PassUsuE)
 	if exists(select * from inserted where LEN(Clave) < 8
 										OR LEN(Clave) > 20
 										OR Clave not like '%[0-9]%'
 										OR Clave not like '%[a-zA-Z]%'
 										OR Clave not like '%[^a-zA-Z0-9]%')
 	begin
-		RAISERROR('La contraseÒa debe tener minimo de 8 caracteres, debe contener al menos 1 dÌgito, una letra y un sÌmbolo', 16,1)
+		RAISERROR('La contrase√±a debe tener minimo de 8 caracteres, debe contener al menos 1 d√≠gito, una letra y un s√≠mbolo', 16,1)
 		return
 	end
 
-	-- Si llego ac· todo esta OK
+	-- Si llego ac√° todo esta OK
 	insert Editorial(NomE, Dir, NomUsuE, PassUsuE, CodP)
 	select IDProveedor, Ubicacion, Acceso, Clave, IDProcedencia
 	from inserted
@@ -550,18 +556,18 @@ BEGIN
 		return
 	end
 
-	-- validamos contraseÒa (PassUsuE)
+	-- validamos contrase√±a (PassUsuE)
 	if exists(select * from inserted where LEN(Clave) < 8
 										OR LEN(Clave) > 20
 										OR Clave not like '%[0-9]%'
 										OR Clave not like '%[a-zA-Z]%'
 										OR Clave not like '%[^a-zA-Z0-9]%')
 	begin
-		RAISERROR('La contraseÒa debe tener minimo de 8 caracteres, debe contener al menos 1 dÌgito, una letra y un sÌmbolo', 16,1)
+		RAISERROR('La contrase√±a debe tener minimo de 8 caracteres, debe contener al menos 1 d√≠gito, una letra y un s√≠mbolo', 16,1)
 		return
 	end
 
-	-- Si llego ac· todo esta OK, se puede modificar
+	-- Si llego ac√° todo esta OK, se puede modificar
 	UPDATE Editorial
 	set Dir = (select Ubicacion from inserted),
 		NomUsuE = (select Acceso from inserted),
@@ -589,14 +595,14 @@ BEGIN
 		return
 	end
 
-	-- Si llego ac· todo esta OK, se puede eliminar
+	-- Si llego ac√° todo esta OK, se puede eliminar
 	DELETE Editorial
 	where NomE = (select IDProveedor from deleted)
 END
 go
 
 -- VISTA: ClientesComerciales
--- TABLA: LibrerÌa
+-- TABLA: Librer√≠a
 CREATE TRIGGER ValidoInsertCliComerciales ON ClientesComerciales INSTEAD OF insert
 AS
 BEGIN
@@ -621,7 +627,7 @@ BEGIN
 	-- validamos que no exista la PK (RUT) en la bd
 	if exists(select * from Libreria where RUT = (select IDCliente from inserted))
 	begin
-		RAISERROR('La LibrerÌa ya existe, no podemos darlo de alta', 16,1)
+		RAISERROR('La Librer√≠a ya existe, no podemos darlo de alta', 16,1)
 		return
 	end
 
@@ -640,18 +646,18 @@ BEGIN
 		return
 	end
 
-	-- validamos contraseÒa (PassUsuL)
+	-- validamos contrase√±a (PassUsuL)
 	if exists(select * from inserted where LEN(Clave) < 8
 										OR LEN(Clave) > 20
 										OR Clave not like '%[0-9]%'
 										OR Clave not like '%[a-zA-Z]%'
 										OR Clave not like '%[^a-zA-Z0-9]%')
 	begin
-		RAISERROR('La contraseÒa debe tener minimo de 8 caracteres y maximo 20, debe contener al menos 1 dÌgito, una letra y un sÌmbolo', 16,1)
+		RAISERROR('La contrase√±a debe tener minimo de 8 caracteres y maximo 20, debe contener al menos 1 d√≠gito, una letra y un s√≠mbolo', 16,1)
 		return
 	end
 
-	-- Si llego ac· todo esta OK
+	-- Si llego ac√° todo esta OK
 	insert Libreria(RUT, NomL, NomUsuL, PassUsuL)
 	select IDCliente, Denominacion, Acceso, Clave
 	from inserted
@@ -701,18 +707,18 @@ BEGIN
 		return
 	end
 
-	-- validamos contraseÒa (PassUsuL)
+	-- validamos contrase√±a (PassUsuL)
 	if exists(select * from inserted where LEN(Clave) < 8
 										OR LEN(Clave) > 20
 										OR Clave not like '%[0-9]%'
 										OR Clave not like '%[a-zA-Z]%'
 										OR Clave not like '%[^a-zA-Z0-9]%')
 	begin
-		RAISERROR('La contraseÒa debe tener minimo de 8 caracteres y maximo 20, debe contener al menos 1 dÌgito, una letra y un sÌmbolo', 16,1)
+		RAISERROR('La contrase√±a debe tener minimo de 8 caracteres y maximo 20, debe contener al menos 1 d√≠gito, una letra y un s√≠mbolo', 16,1)
 		return
 	end
 
-	-- Si llego ac· todo esta OK, se puede modificar
+	-- Si llego ac√° todo esta OK, se puede modificar
 	UPDATE Libreria
 	set NomL = (select Denominacion from inserted),
 		NomUsuL = (select Acceso from inserted),
@@ -739,7 +745,7 @@ BEGIN
 		return
 	end
 
-	-- Si llego ac· todo esta OK, se puede eliminar
+	-- Si llego ac√° todo esta OK, se puede eliminar
 	DELETE Libreria
 	where RUT = (select IDCliente from deleted)
 END
@@ -809,8 +815,8 @@ BEGIN
 		return
 	end
 
-	-- Si llego ac· todo esta OK
-	insert Libros(ISBN, NomLib, Genero, ReseÒa, Stock, CodA, NomE)
+	-- Si llego ac√° todo esta OK
+	insert Libros(ISBN, NomLib, Genero, Rese√±a, Stock, CodA, NomE)
 	select IDLibro, Denominacion, Tipo, Descripcion, Disponible, IDEscritor, IDProveedor
 	from inserted
 END
@@ -878,11 +884,11 @@ BEGIN
 		return
 	end
 
-	-- Si llego ac· todo esta OK, se puede modificar
+	-- Si llego ac√° todo esta OK, se puede modificar
 	UPDATE Libros
 	set NomLib = (select Denominacion from inserted),
 		Genero = (select Tipo from inserted),
-		ReseÒa = (select Descripcion from inserted),
+		Rese√±a = (select Descripcion from inserted),
 		Stock = (select Disponible from inserted),
 		CodA = (select IDEscritor from inserted),
 		NomE = (select IDProveedor from inserted)
@@ -908,7 +914,7 @@ BEGIN
 		return
 	end
 
-	-- Si llego ac· todo esta OK, se puede eliminar
+	-- Si llego ac√° todo esta OK, se puede eliminar
 	DELETE Libros
 	where ISBN = (select IDLibro from deleted)
 END
@@ -1199,7 +1205,7 @@ BEGIN
 END
 go
 
--- LibrerÌa: ABM, Busqueda individual y listado completo
+-- Librer√≠a: ABM, Busqueda individual y listado completo
 CREATE PROCEDURE AltaClientesComerciales 
 @IDCliente varchar(12), 
 @Denominacion varchar(30),
@@ -1223,7 +1229,7 @@ BEGIN
 		set @varSentencia = 'CREATE USER [' + @Acceso + '] FROM LOGIN [' + @Acceso + ']'
 		exec(@varSentencia)
 
-		-- Asignamos rol librerÌa
+		-- Asignamos rol librer√≠a
 		set @varSentencia = 'ALTER ROLE RolLibreria ADD MEMBER [' + @Acceso + ']'
 		exec(@varSentencia)
 
@@ -1287,7 +1293,7 @@ BEGIN
 		from ClientesComerciales
 		where IDCliente = @IDCliente
 
-		-- elimina la librerÌa, dispara el trigger ValidoDeleteCliComerciales
+		-- elimina la librer√≠a, dispara el trigger ValidoDeleteCliComerciales
 		delete ClientesComerciales
 		where IDCliente = @IDCliente
 
@@ -1497,7 +1503,7 @@ EXEC AltaProcedencia 'COL','Colombia','AA'
 EXEC AltaProcedencia 'ECU','Ecuador','AA'
 EXEC AltaProcedencia 'CAN','Canada','AA'
 
-EXEC AltaProcedencia 'ESP','EspaÒa','EU'
+EXEC AltaProcedencia 'ESP','Espa√±a','EU'
 EXEC AltaProcedencia 'FRA','Francia','EU'
 EXEC AltaProcedencia 'ITA','Italia','EU'
 EXEC AltaProcedencia 'DEU','Alemania','EU'
@@ -1665,14 +1671,14 @@ EXEC AltaClientesComerciales '100000000030','Libreria Gamma','gamma001','Gamma00
 go
 
 -- Libros - 100 datos
-EXEC AltaCatalogo '9780000000001','Don Quijote','Novela','Clasico de la literatura espaÒola',20,'AUT0000001','Planeta'
+EXEC AltaCatalogo '9780000000001','Don Quijote','Novela','Clasico de la literatura espa√±ola',20,'AUT0000001','Planeta'
 EXEC AltaCatalogo '9780000000002','La Galatea','Novela','Obra pastoril de Cervantes',15,'AUT0000001','Alfaguara'
-EXEC AltaCatalogo '9780000000003','Fuenteovejuna','Teatro','Drama clasico espaÒol',18,'AUT0000002','Anagrama'
-EXEC AltaCatalogo '9780000000004','Fortunata y Jacinta','Novela','Novela realista espaÒola',12,'AUT0000003','Santillana'
-EXEC AltaCatalogo '9780000000005','Bodas de Sangre','Teatro','Tragedia poetica espaÒola',25,'AUT0000004','Tusquets'
+EXEC AltaCatalogo '9780000000003','Fuenteovejuna','Teatro','Drama clasico espa√±ol',18,'AUT0000002','Anagrama'
+EXEC AltaCatalogo '9780000000004','Fortunata y Jacinta','Novela','Novela realista espa√±ola',12,'AUT0000003','Santillana'
+EXEC AltaCatalogo '9780000000005','Bodas de Sangre','Teatro','Tragedia poetica espa√±ola',25,'AUT0000004','Tusquets'
 
 EXEC AltaCatalogo '9780000000006','Los Miserables','Novela','Novela historica francesa',30,'AUT0000006','Gallimard'
-EXEC AltaCatalogo '9780000000007','Nuestra SeÒora Paris','Novela','Clasico de Victor Hugo',14,'AUT0000006','Hachette'
+EXEC AltaCatalogo '9780000000007','Nuestra Se√±ora Paris','Novela','Clasico de Victor Hugo',14,'AUT0000006','Hachette'
 EXEC AltaCatalogo '9780000000008','Viaje al Centro','Aventura','Novela de aventuras',22,'AUT0000007','Flammarion'
 EXEC AltaCatalogo '9780000000009','La Isla Misteriosa','Aventura','Aventura cientifica',16,'AUT0000007','Gallimard'
 EXEC AltaCatalogo '9780000000010','Los Tres Mosqueteros','Aventura','Novela de capa y espada',28,'AUT0000008','Hachette'
@@ -1691,7 +1697,7 @@ EXEC AltaCatalogo '9780000000020','La Amiga Genial','Novela','Historia de amista
 
 EXEC AltaCatalogo '9780000000021','Fausto','Teatro','Obra clasica alemana',18,'AUT0000016','Penguin Books'
 EXEC AltaCatalogo '9780000000022','Los Buddenbrook','Novela','Novela familiar alemana',12,'AUT0000017','HarperCollins'
-EXEC AltaCatalogo '9780000000023','La MontaÒa Magica','Novela','Novela filosofica alemana',10,'AUT0000017','Oxford Press'
+EXEC AltaCatalogo '9780000000023','La Monta√±a Magica','Novela','Novela filosofica alemana',10,'AUT0000017','Oxford Press'
 EXEC AltaCatalogo '9780000000024','Siddhartha','Novela','Busqueda espiritual',26,'AUT0000018','Penguin Books'
 EXEC AltaCatalogo '9780000000025','El Lobo Estepario','Novela','Novela existencial',15,'AUT0000018','HarperCollins'
 
@@ -1734,14 +1740,14 @@ EXEC AltaCatalogo '9780000000055','Anaconda','Cuentos','Relatos de la selva',17,
 EXEC AltaCatalogo '9780000000056','Procura Imposible','Poesia','Poesia de Ida Vitale',11,'AUT0000035','Criatura'
 EXEC AltaCatalogo '9780000000057','El Alquimista','Novela','Novela espiritual',40,'AUT0000036','Companhia Letras'
 EXEC AltaCatalogo '9780000000058','Brida','Novela','Novela de Paulo Coelho',22,'AUT0000036','Record'
-EXEC AltaCatalogo '9780000000059','Memorias Postumas','Novela','Clasico brasileÒo',18,'AUT0000037','Rocco'
-EXEC AltaCatalogo '9780000000060','Dom Casmurro','Novela','Novela realista brasileÒa',25,'AUT0000037','Companhia Letras'
+EXEC AltaCatalogo '9780000000059','Memorias Postumas','Novela','Clasico brasile√±o',18,'AUT0000037','Rocco'
+EXEC AltaCatalogo '9780000000060','Dom Casmurro','Novela','Novela realista brasile√±a',25,'AUT0000037','Companhia Letras'
 
-EXEC AltaCatalogo '9780000000061','Gabriela Clavo','Novela','Novela brasileÒa',20,'AUT0000038','Record'
-EXEC AltaCatalogo '9780000000062','Capitanes Arena','Novela','Novela social brasileÒa',16,'AUT0000038','Rocco'
+EXEC AltaCatalogo '9780000000061','Gabriela Clavo','Novela','Novela brasile√±a',20,'AUT0000038','Record'
+EXEC AltaCatalogo '9780000000062','Capitanes Arena','Novela','Novela social brasile√±a',16,'AUT0000038','Rocco'
 EXEC AltaCatalogo '9780000000063','La Hora Estrella','Novela','Novela de Lispector',19,'AUT0000039','Companhia Letras'
-EXEC AltaCatalogo '9780000000064','Agua Viva','Novela','Prosa poetica brasileÒa',13,'AUT0000039','Record'
-EXEC AltaCatalogo '9780000000065','Agosto','Policial','Novela policial brasileÒa',14,'AUT0000040','Rocco'
+EXEC AltaCatalogo '9780000000064','Agua Viva','Novela','Prosa poetica brasile√±a',13,'AUT0000039','Record'
+EXEC AltaCatalogo '9780000000065','Agosto','Policial','Novela policial brasile√±a',14,'AUT0000040','Rocco'
 
 EXEC AltaCatalogo '9780000000066','Veinte Poemas','Poesia','Poesia amorosa chilena',33,'AUT0000041','Zig Zag'
 EXEC AltaCatalogo '9780000000067','Canto General','Poesia','Poesia historica chilena',15,'AUT0000041','Planeta Chile'
@@ -1765,11 +1771,11 @@ EXEC AltaCatalogo '9780000000081','Una Cuestion Personal','Novela','Novela japon
 EXEC AltaCatalogo '9780000000082','Arrancad Semillas','Novela','Novela de Kenzaburo Oe',10,'AUT0000049','Shueisha'
 EXEC AltaCatalogo '9780000000083','Kitchen','Novela','Novela japonesa breve',22,'AUT0000050','Shogakukan'
 EXEC AltaCatalogo '9780000000084','Amrita','Novela','Novela de Yoshimoto',13,'AUT0000050','Kodansha'
-EXEC AltaCatalogo '9780000000085','La Tabla Flandes','Misterio','Novela de misterio espaÒola',19,'AUT0000005','Planeta'
+EXEC AltaCatalogo '9780000000085','La Tabla Flandes','Misterio','Novela de misterio espa√±ola',19,'AUT0000005','Planeta'
 
-EXEC AltaCatalogo '9780000000086','Capitan Alatriste','Aventura','Aventura historica espaÒola',27,'AUT0000005','Alfaguara'
-EXEC AltaCatalogo '9780000000087','Trafalgar','Novela','Episodio nacional espaÒol',18,'AUT0000003','Anagrama'
-EXEC AltaCatalogo '9780000000088','Yerma','Teatro','Drama rural espaÒol',17,'AUT0000004','Santillana'
+EXEC AltaCatalogo '9780000000086','Capitan Alatriste','Aventura','Aventura historica espa√±ola',27,'AUT0000005','Alfaguara'
+EXEC AltaCatalogo '9780000000087','Trafalgar','Novela','Episodio nacional espa√±ol',18,'AUT0000003','Anagrama'
+EXEC AltaCatalogo '9780000000088','Yerma','Teatro','Drama rural espa√±ol',17,'AUT0000004','Santillana'
 EXEC AltaCatalogo '9780000000089','Novelas Ejemplares','Novela','Coleccion de relatos',21,'AUT0000001','Tusquets'
 EXEC AltaCatalogo '9780000000090','Conde Montecristo','Aventura','Aventura historica francesa',26,'AUT0000008','Gallimard'
 
@@ -2000,7 +2006,7 @@ go
 -- Procedencia / Pais
 INSERT INTO Procedencia VALUES(NULL,'Pais Error','AA') -- PK NULL
 INSERT INTO Procedencia VALUES('A1B','Pais Error','AA') -- PK combinacion de numero y letras 
-INSERT INTO Procedencia VALUES('ESP','EspaÒa Repetida','EU') -- PK duplicada
+INSERT INTO Procedencia VALUES('ESP','Espa√±a Repetida','EU') -- PK duplicada
 INSERT INTO Procedencia VALUES('AAA','Pais Error','ZZ') -- Continente invalido
 INSERT INTO Procedencia VALUES('BBB','Pais Error','A1') -- Continente invalido
 go
@@ -2021,7 +2027,7 @@ INSERT INTO ProveedoresLibros VALUES('Planeta','Dir Error','editor02','Clave123!
 INSERT INTO ProveedoresLibros VALUES('Editorial Error','Dir Error','editor03','Clave123!','XXX') -- Pais no existe
 INSERT INTO ProveedoresLibros VALUES('Editorial Error','Dir Error','abc','Clave123!','ESP') -- usuario invalido
 INSERT INTO ProveedoresLibros VALUES('Editorial Error','Dir Error','planeta01','Clave123!','ESP') -- usuario ya existe
-INSERT INTO ProveedoresLibros VALUES('Editorial Error','Dir Error','editor04','12345678','ESP') -- contraseÒa incorrecta
+INSERT INTO ProveedoresLibros VALUES('Editorial Error','Dir Error','editor04','12345678','ESP') -- contrase√±a incorrecta
 go
 
 -- ClientesComerciales / Libreria
