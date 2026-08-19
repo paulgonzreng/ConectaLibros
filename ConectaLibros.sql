@@ -482,6 +482,7 @@ BEGIN
 	-- validamos que el usuario sea unico
 	-- ya lo hace el indice pero aca mostramos el error
 	if exists(select * from Editorial where NomUsuE = (select Acceso from inserted))
+		or exists(select * from Libreria where NomUsuL = (select Acceso from inserted))
 	begin
 		RAISERROR('El usuario ya existe, no se da el alta', 16,1)
 		return
@@ -638,11 +639,11 @@ BEGIN
 		return
 	end
 	
-	-- validamos que el usuario sea unico
-	-- ya lo hace el indice pero aca mostramos el error
+-- validamos que el usuario sea unico en todo el sistema
 	if exists(select * from Libreria where NomUsuL = (select Acceso from inserted))
+		or exists(select * from Editorial where NomUsuE = (select Acceso from inserted))
 	begin
-		RAISERROR('El usuario ya existe, no se da el alta', 16,1)
+		RAISERROR('El usuario ya existe en el sistema, no se da el alta', 16,1)
 		return
 	end
 
